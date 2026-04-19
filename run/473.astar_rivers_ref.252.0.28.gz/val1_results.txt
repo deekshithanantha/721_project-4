@@ -1,0 +1,19 @@
+
+Copyright (c) 2018 by Eric Rotenberg.  All Rights Reserved.
+Welcome to the ECE 721 Simulator.  This is a custom simulator
+developed at North Carolina State University by Eric Rotenberg
+and his students.  It uses the RISCV ISA and functional simulation tools.
+
+****Initialization complete****
+Fast skipping Spike for 25200000 instructions
+Functional simulator running ahead
+****Initialization complete****
+Fast skipping MICROS for 25200000 instructions
+Starting MICROS
+GRADING PLATEAU: 1000
+GRADING PLATEAU: 10000
+GRADING PLATEAU: 100000
+GRADING PLATEAU: 1000000
+(cycle = 4194304 ) num_insn = 8487221	IPC = 2.02
+GRADING PLATEAU: 10000000
+Stopping MICROS: HTIF Exit Code 0
