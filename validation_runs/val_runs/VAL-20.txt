@@ -1,0 +1,170 @@
+
+=== PERFECT FLAGS ===============================================================
+
+PERFECT_BRANCH_PRED = 0
+PERFECT_DCACHE      = 0
+PERFECT_ICACHE      = 0
+PERFECT_TRACE_CACHE = 1
+ORACLE_DISAMBIG     = 0
+
+=== STRUCTURES AND POLICIES =====================================================
+
+FETCH QUEUE = 64
+RENAMER:
+   ACTIVE LIST = 256
+   PHYSICAL REGISTER FILE = 320 (auto-sized w.r.t. Active List)
+   BRANCH CHECKPOINTS = 32
+SCHEDULER:
+   ISSUE QUEUE = 64
+   PARTITIONS = 4
+   PRESTEER = 0
+   IDEAL AGE-BASED = 0
+LOAD/STORE UNIT:
+   LOAD QUEUE = 128
+   STORE QUEUE = 128
+   Loads synchronize (stall/unstall) at: IQ
+   MEMORY DEPENDENCE PREDICTOR: Store Sets
+   SPLIT STORES = 0
+
+=== PIPELINE STAGE WIDTHS =======================================================
+
+FETCH WIDTH = 8
+DISPATCH WIDTH = 8
+ISSUE WIDTH = 16
+RETIRE WIDTH = 8
+
+=== EXECUTION LANES =============================================================
+
+        |latency |   BR   |   LS   |  ALU_S |  ALU_C | LS_FP  | ALU_FP |  MTF   |
+        +--------+--------+--------+--------+--------+--------+--------+--------+
+lane 0  |    3   |        |   x    |        |        |   x    |        |        |
+lane 1  |    1   |   x    |        |   x    |        |        |        |   x    |
+lane 2  |    3   |        |        |        |   x    |        |   x    |        |
+lane 3  |    1   |   x    |        |   x    |        |        |        |   x    |
+lane 4  |    1   |   x    |        |   x    |        |        |        |   x    |
+lane 5  |    3   |        |   x    |        |        |   x    |        |        |
+lane 6  |    1   |   x    |        |   x    |        |        |        |   x    |
+lane 7  |    3   |        |        |        |   x    |        |   x    |        |
+lane 8  |    3   |        |   x    |        |        |   x    |        |        |
+lane 9  |    1   |   x    |        |   x    |        |        |        |   x    |
+lane 10  |    3   |        |        |        |   x    |        |   x    |        |
+lane 11  |    1   |   x    |        |   x    |        |        |        |   x    |
+lane 12  |    1   |   x    |        |   x    |        |        |        |   x    |
+lane 13  |    3   |        |   x    |        |        |   x    |        |        |
+lane 14  |    1   |   x    |        |   x    |        |        |        |   x    |
+lane 15  |    3   |        |        |        |   x    |        |   x    |        |
+
+=== MEMORY HIERARCHY ============================================================
+
+L1 I$:
+   64 KB, 8-way set-associative, 64 B block size
+   hit latency = 1 cycles (superseded by fetch unit's pipeline depth)
+   MHSRs = 32
+L1 D$:
+   64 KB, 4-way set-associative, 64 B block size
+   hit latency = 1 cycles (superseded by load/store lane's pipeline depth)
+   MHSRs = 128
+L2$:
+   1 MB, 8-way set-associative, 64 B block size
+   hit latency = 10 cycles 
+   MHSRs = 128
+L3$:
+   8 MB, 16-way set-associative, 128 B block size
+   hit latency = 30 cycles 
+   MHSRs = 128
+   miss latency = 100 cycles
+
+=== BRANCH PREDICTOR ============================================================
+
+BQ_SIZE = 352 (auto-sized)
+BTB_ENTRIES = 8192
+BTB_ASSOC = 4
+RAS_SIZE = 64
+RAS_RECOVER_MODEL = RAS_RECOVER_TOS_POINTER_AND_CONTENT
+COND_BRANCH_PRED_PER_CYCLE = 3
+CBP_ALGORITHM = gshare
+CBP_PC_LENGTH = 20
+CBP_BHR_LENGTH = 16
+IBP_PC_LENGTH = 20
+IBP_BHR_LENGTH = 16
+ENABLE_TRACE_CACHE = 1
+
+=== VALUE PREDICTOR ============================================================
+
+VP-eligible configuration:
+   predINTALU = 1
+   predFPALU  = 0
+   predLOAD   = 1
+
+VALUE PREDICTOR = stride (Project 4 spec. implementation)
+   VPQsize         = 256
+   oracleconf      = 0 (real confidence)
+   # index bits    = 4
+   # tag bits      = 0
+   confmax         = 1
+
+COST ACCOUNTING
+   One SVP entry:
+      tag           :   0 bits  // num_tag_bits
+      conf          :   1 bits  // formula: (uint64_t)ceil(log2((double)(confmax+1)))
+      retired_value :  64 bits  // RISCV64 integer size.
+      stride        :  64 bits  // RISCV64 integer size. Competition opportunity: truncate stride to far fewer bits based on stride distribution of stride-predictable instructions.
+      instance ctr  :   8 bits  // formula: (uint64_t)ceil(log2((double)VPQsize))
+      -------------------------
+      bits/SVP entry: 137 bits
+   Total storage cost (bits) = (16 SVP entries x 137 bits/SVP entry) = 2192 bits
+   Total storage cost (bytes) = 274.00 B (0.27 KB)
+
+=== INTERNAL SIMULATOR STRUCTURES ===============================================
+
+PAYLOAD_BUFFER_SIZE = 1024
+
+=== END CONFIGURATION ===========================================================
+
+[stats]
+commit_count : 4000000
+cycle_count : 500025
+exception_count : 0
+ld_vio_count : 0
+split_count : 0
+[rates]
+ipc_rate : 8.00
+BRANCH PREDICTION MEASUREMENTS---------------------
+Type                      n          m     mr  mpki
+All                 1000000          0  0.00%  0.00
+Branch              1000000          0  0.00%  0.00
+Jump Direct               0          0  -nan%  0.00
+Call Direct               0          0  -nan%  0.00
+Jump Indirect             0          0  -nan%  0.00
+Call Indirect             0          0  -nan%  0.00
+Return                    0          0  -nan%  0.00
+(Number of Jump Indirects whose target was the next sequential PC = 0)
+(Average number of instructions between taken branches = 4.00)
+BTB MEASUREMENTS-----------------------------------
+BTB misses (fetch cycles squashed due to a BTB miss) = 0 (0.00% of all cycles)
+LSU MEASUREMENTS-----------------------------------
+LOADS (retired)
+  loads            = 0
+  disambig. stall  = 0 (-nan%)
+     disambig. stall: addr. unknown = 0 (-nan%)
+        true dep. stall             = 0 (-nan%)
+        false dep. stall            = 0 (-nan%)
+     disambig. stall: value or size = 0 (-nan%)
+  load violations  = 0 (-nan%)
+  forward          = 0 (-nan%)
+  miss stall       = 0 (-nan%)
+STORES (retired)
+  stores           = 1000000
+  miss stall       = 0 (0.00%)
+MDP quick stats
+  average # extra cycles load waits in IQ for inum wakeup = -nan cycles
+  # loads falsely stalled at LQ = 0
+  # load violations = 0
+VPU MEASUREMENTS-----------------------------------
+vpmeas_ineligible         :    2000000 ( 50.00%) // Not eligible for value prediction.
+vpmeas_eligible           :    2000000 ( 50.00%) // Eligible for value prediction.
+   vpmeas_miss            :          0 (  0.00%) // VPU was unable to generate a value prediction (e.g., SVP miss).
+   vpmeas_conf_corr       :    1999962 ( 50.00%) // VPU generated a confident and correct value prediction.
+   vpmeas_conf_incorr     :          0 (  0.00%) // VPU generated a confident and incorrect value prediction. (MISPREDICTION)
+   vpmeas_unconf_corr     :          4 (  0.00%) // VPU generated an unconfident and correct value prediction. (LOST OPPORTUNITY)
+   vpmeas_unconf_incorr   :         34 (  0.00%) // VPU generated an unconfident and incorrect value prediction.
