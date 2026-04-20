@@ -573,10 +573,24 @@ uarchsim/CMakeFiles/721sim.dir/tc.cc.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/721sim.dir/tc.cc.s"
 	cd /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build/uarchsim && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/721sim/uarchsim/tc.cc -o CMakeFiles/721sim.dir/tc.cc.s
 
+uarchsim/CMakeFiles/721sim.dir/vp.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
+uarchsim/CMakeFiles/721sim.dir/vp.cc.o: /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/721sim/uarchsim/vp.cc
+uarchsim/CMakeFiles/721sim.dir/vp.cc.o: uarchsim/CMakeFiles/721sim.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building CXX object uarchsim/CMakeFiles/721sim.dir/vp.cc.o"
+	cd /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build/uarchsim && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT uarchsim/CMakeFiles/721sim.dir/vp.cc.o -MF CMakeFiles/721sim.dir/vp.cc.o.d -o CMakeFiles/721sim.dir/vp.cc.o -c /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/721sim/uarchsim/vp.cc
+
+uarchsim/CMakeFiles/721sim.dir/vp.cc.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/721sim.dir/vp.cc.i"
+	cd /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build/uarchsim && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/721sim/uarchsim/vp.cc > CMakeFiles/721sim.dir/vp.cc.i
+
+uarchsim/CMakeFiles/721sim.dir/vp.cc.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/721sim.dir/vp.cc.s"
+	cd /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build/uarchsim && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/721sim/uarchsim/vp.cc -o CMakeFiles/721sim.dir/vp.cc.s
+
 uarchsim/CMakeFiles/721sim.dir/writeback.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/writeback.cc.o: /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/721sim/uarchsim/writeback.cc
 uarchsim/CMakeFiles/721sim.dir/writeback.cc.o: uarchsim/CMakeFiles/721sim.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building CXX object uarchsim/CMakeFiles/721sim.dir/writeback.cc.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building CXX object uarchsim/CMakeFiles/721sim.dir/writeback.cc.o"
 	cd /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build/uarchsim && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT uarchsim/CMakeFiles/721sim.dir/writeback.cc.o -MF CMakeFiles/721sim.dir/writeback.cc.o.d -o CMakeFiles/721sim.dir/writeback.cc.o -c /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/721sim/uarchsim/writeback.cc
 
 uarchsim/CMakeFiles/721sim.dir/writeback.cc.i: cmake_force
@@ -625,6 +639,7 @@ uarchsim/CMakeFiles/721sim.dir/writeback.cc.s: cmake_force
 "CMakeFiles/721sim.dir/tage-sc-l-wrapper.cc.o" \
 "CMakeFiles/721sim.dir/tage-sc-l.cc.o" \
 "CMakeFiles/721sim.dir/tc.cc.o" \
+"CMakeFiles/721sim.dir/vp.cc.o" \
 "CMakeFiles/721sim.dir/writeback.cc.o"
 
 # External object files for target 721sim
@@ -666,6 +681,7 @@ uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/stats.cc.o
 uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/tage-sc-l-wrapper.cc.o
 uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/tage-sc-l.cc.o
 uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/tc.cc.o
+uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/vp.cc.o
 uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/writeback.cc.o
 uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/build.make
 uarchsim/721sim: riscv-base/libriscv.a
@@ -676,7 +692,7 @@ uarchsim/721sim: /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/
 uarchsim/721sim: /usr/lib64/libz.so
 uarchsim/721sim: riscv-base/softfloat/libsoftfloat.a
 uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Linking CXX executable 721sim"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Linking CXX executable 721sim"
 	cd /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build/uarchsim && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/721sim.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

@@ -6,5 +6,5 @@ CXX_DEFINES = -DPREFIX=\".\" -DRISCV_MICRO_CHECKER
 
 CXX_INCLUDES = -I/mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/721sim/riscv-base/. -I/mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build/riscv-base -I/mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/721sim/riscv-base/../uarchsim -I/mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/721sim/riscv-base/fesvr/.. -I/mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/721sim/riscv-base/fesvr/. -I/mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/721sim/riscv-base/softfloat/.
 
-CXX_FLAGS = -std=c++11 -Wno-sign-compare -pthread
+CXX_FLAGS = -O3 -g -std=c++11 -Wno-sign-compare -pthread
 

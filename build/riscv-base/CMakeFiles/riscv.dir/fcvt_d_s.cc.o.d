@@ -33,7 +33,8 @@ riscv-base/CMakeFiles/riscv.dir/fcvt_d_s.cc.o: \
  /usr/include/bits/types/FILE.h /usr/include/bits/types/struct_FILE.h \
  /usr/include/bits/types/cookie_io_functions_t.h \
  /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h \
- /usr/include/c++/8/vector /usr/include/c++/8/bits/stl_algobase.h \
+ /usr/include/bits/stdio.h /usr/include/c++/8/vector \
+ /usr/include/c++/8/bits/stl_algobase.h \
  /usr/include/c++/8/bits/functexcept.h \
  /usr/include/c++/8/bits/exception_defines.h \
  /usr/include/c++/8/bits/cpp_type_traits.h \
@@ -107,9 +108,9 @@ riscv-base/CMakeFiles/riscv.dir/fcvt_d_s.cc.o: \
  /usr/include/bits/waitstatus.h /usr/include/sys/types.h \
  /usr/include/sys/select.h /usr/include/bits/select.h \
  /usr/include/bits/types/sigset_t.h /usr/include/bits/types/__sigset_t.h \
- /usr/include/alloca.h /usr/include/bits/stdlib-float.h \
- /usr/include/c++/8/bits/std_abs.h /usr/include/c++/8/cerrno \
- /usr/include/errno.h /usr/include/bits/errno.h \
+ /usr/include/alloca.h /usr/include/bits/stdlib-bsearch.h \
+ /usr/include/bits/stdlib-float.h /usr/include/c++/8/bits/std_abs.h \
+ /usr/include/c++/8/cerrno /usr/include/errno.h /usr/include/bits/errno.h \
  /usr/include/linux/errno.h /usr/include/asm/errno.h \
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
  /usr/include/bits/types/error_t.h \

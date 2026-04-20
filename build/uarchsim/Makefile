@@ -994,6 +994,30 @@ tc.cc.s:
 	cd /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build && $(MAKE) $(MAKESILENT) -f uarchsim/CMakeFiles/721sim.dir/build.make uarchsim/CMakeFiles/721sim.dir/tc.cc.s
 .PHONY : tc.cc.s
 
+vp.o: vp.cc.o
+.PHONY : vp.o
+
+# target to build an object file
+vp.cc.o:
+	cd /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build && $(MAKE) $(MAKESILENT) -f uarchsim/CMakeFiles/721sim.dir/build.make uarchsim/CMakeFiles/721sim.dir/vp.cc.o
+.PHONY : vp.cc.o
+
+vp.i: vp.cc.i
+.PHONY : vp.i
+
+# target to preprocess a source file
+vp.cc.i:
+	cd /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build && $(MAKE) $(MAKESILENT) -f uarchsim/CMakeFiles/721sim.dir/build.make uarchsim/CMakeFiles/721sim.dir/vp.cc.i
+.PHONY : vp.cc.i
+
+vp.s: vp.cc.s
+.PHONY : vp.s
+
+# target to generate assembly for a file
+vp.cc.s:
+	cd /mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/build && $(MAKE) $(MAKESILENT) -f uarchsim/CMakeFiles/721sim.dir/build.make uarchsim/CMakeFiles/721sim.dir/vp.cc.s
+.PHONY : vp.cc.s
+
 writeback.o: writeback.cc.o
 .PHONY : writeback.o
 
@@ -1135,6 +1159,9 @@ help:
 	@echo "... tc.o"
 	@echo "... tc.i"
 	@echo "... tc.s"
+	@echo "... vp.o"
+	@echo "... vp.i"
+	@echo "... vp.s"
 	@echo "... writeback.o"
 	@echo "... writeback.i"
 	@echo "... writeback.s"

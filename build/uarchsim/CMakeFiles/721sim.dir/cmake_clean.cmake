@@ -73,6 +73,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/721sim.dir/tage-sc-l.cc.o.d"
   "CMakeFiles/721sim.dir/tc.cc.o"
   "CMakeFiles/721sim.dir/tc.cc.o.d"
+  "CMakeFiles/721sim.dir/vp.cc.o"
+  "CMakeFiles/721sim.dir/vp.cc.o.d"
   "CMakeFiles/721sim.dir/writeback.cc.o"
   "CMakeFiles/721sim.dir/writeback.cc.o.d"
 )

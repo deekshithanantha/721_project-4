@@ -6,5 +6,5 @@ C_DEFINES =
 
 C_INCLUDES = -I/mnt/ncsudrive/d/dananth/flyworks/2nd_sem/721_Advance_MicroArc/project_4/721sim/riscv-base/softfloat/.
 
-C_FLAGS = -Wno-sign-compare
+C_FLAGS = -O3 -g -Wno-sign-compare
 
