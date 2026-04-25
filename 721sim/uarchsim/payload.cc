@@ -118,6 +118,26 @@ unsigned int payload::push() {
 
    index = tail;
 
+   unsigned int odd_index = MOD(index + 1, PAYLOAD_BUFFER_SIZE);
+
+   buf[index].valpred_eligible = false;
+   buf[index].valpred_availability = false;
+   buf[index].valpred_confidence = false;
+   buf[index].valpred_use_stat = false;
+   buf[index].valpred_correct = false;
+   buf[index].valpred_destination = 0;
+   buf[index].valpred_Q_stat = false;
+   buf[index].valpred_index = 0;
+
+   buf[odd_index].valpred_eligible = false;
+   buf[odd_index].valpred_availability = false;
+   buf[odd_index].valpred_confidence = false;
+   buf[odd_index].valpred_use_stat = false;
+   buf[odd_index].valpred_correct = false;
+   buf[odd_index].valpred_destination = 0;
+   buf[odd_index].valpred_Q_stat = false;
+   buf[odd_index].valpred_index = 0;
+
    // Increment tail by two, since each instruction is pre-allocated
    // two entries, even and odd, to accommodate instruction splitting.
    tail = MOD((tail + 2), PAYLOAD_BUFFER_SIZE);

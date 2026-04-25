@@ -79,6 +79,8 @@
 #define IS_FP_OP(flags) ((flags) & (F_FCOMP | F_FMEM))
 #define IS_AMO(flags) ((flags) & (F_AMO))
 #define IS_CSR(flags) ((flags) & (F_CSR))
+#define IS_INTALU(flags) ((flags) & (F_ICOMP))
+#define IS_FPALU(flags)  ((flags) & (F_FCOMP))
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -376,6 +378,7 @@ private:
    bool execute_csr();
 
    void split(uint64_t index);
+   void valpred_calaclator(payload_t *pay);
 
 public:
    // The thread id.
@@ -387,6 +390,15 @@ public:
    // Number of instructions retired.
    uint64_t num_insn;
    double extra_wait_time_for_inum;
+
+   // Project 4: VPU measurements.
+   uint64_t vpmeas_ineligible;
+   uint64_t vpmeas_eligible;
+   uint64_t vpmeas_miss;
+   uint64_t vpmeas_conf_corr;
+   uint64_t vpmeas_conf_incorr;
+   uint64_t vpmeas_unconf_corr;
+   uint64_t vpmeas_unconf_incorr;
 
    // Functions for pipeline stages.
    void fetch();

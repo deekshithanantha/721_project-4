@@ -6,6 +6,7 @@
 #include "decode.h"
 #include "fu.h"
 #include "fetchunit_types.h"
+#include <cinttypes>
 #include <cstdio>
 
 typedef enum {
@@ -239,6 +240,19 @@ typedef struct {
 
    // If there was an exception during execution, the trap is stored here.
    trap_storage_t trap;
+
+   // project 4 valiables
+   
+   uint64_t valpred_destination;    // predicted destination value   
+   uint64_t valpred_index;          // VPQ index
+
+
+   bool     valpred_eligible;      // instruction is eligible for VP
+   bool     valpred_confidence;     // prediction deemed confident
+   bool     valpred_use_stat;          // dispatch actually injected predicted value
+   bool     valpred_Q_stat;        // instruction has a VPQ entry
+   bool     valpred_availability;    // predictor produced a prediction
+   bool     valpred_correct;       // later result of correctness check
 
 } payload_t;
 

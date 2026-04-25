@@ -4,12 +4,14 @@
 #include <inttypes.h>
 #include <vector>
 #include <cassert>
+#include <cstring>
+#include "valpred.h"
 
 class renamer {
 private:
-	/////////////////////////////////////////////////////////////////////
-	// Put private class variables here.
-	/////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
+    // Put private class variables here.
+    /////////////////////////////////////////////////////////////////////
 
     // struct of Active list
     struct AL_Entry {
@@ -34,36 +36,39 @@ private:
         uint64_t fl_head;                   
         bool fl_head_phase;                 
         uint64_t gbm;                       
+        // checkpointed VPQ tail for future rollback repair
+        uint64_t vpq_tail;
+        bool vpq_tail_phase; 
     };
 
     /////////////////////////////////////////////////////////////////////
-	// Structure 1: Rename Map Table
-	// Entry contains: physical register mapping
-	/////////////////////////////////////////////////////////////////////
+    // Structure 1: Rename Map Table
+    // Entry contains: physical register mapping
+    /////////////////////////////////////////////////////////////////////
     std::vector<uint64_t> RMT;
 
-	/////////////////////////////////////////////////////////////////////
-	// Structure 2: Architectural Map Table
-	// Entry contains: physical register mapping
-	/////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
+    // Structure 2: Architectural Map Table
+    // Entry contains: physical register mapping
+    /////////////////////////////////////////////////////////////////////
     std::vector<uint64_t> AMT;
 
-	/////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
 	// Structure 3: Free List
 	//
 	// Entry contains: physical register number
 	//
 	// Notes:
 	// * Structure includes head, tail, and their phase bits.
-	/////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
     std::vector<uint64_t> FL;
     uint64_t fl_head;
     uint64_t fl_tail;
     bool fl_head_phase;
     bool fl_tail_phase;
 
-	/////////////////////////////////////////////////////////////////////
-	// Structure 4: Active List
+    /////////////////////////////////////////////////////////////////////
+    // Structure 4: Active List
 	//
 	// Entry contains:
 	//
@@ -99,21 +104,21 @@ private:
 	//
 	// Notes:
 	// * Structure includes head, tail, and their phase bits.
-	/////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
     std::vector<AL_Entry> AL;
     uint64_t al_head;
     uint64_t al_tail;
     bool al_head_phase;
     bool al_tail_phase;
 
-	/////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
 	// Structure 5: Physical Register File
 	// Entry contains: value
 	//
 	// Notes:
 	// * The value must be of the following type: uint64_t
 	//   (#include <inttypes.h>, already at top of this file)
-	/////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
     std::vector<bool> prf_ready;    
     
     /////////////////////////////////////////////////////////////////////
@@ -123,8 +128,8 @@ private:
     std::vector<uint64_t> prf_value;
     uint64_t prf_usage_counter;     
 
-	/////////////////////////////////////////////////////////////////////
-	// Structure 7: Global Branch Mask (GBM)
+    /////////////////////////////////////////////////////////////////////
+    // Structure 7: Global Branch Mask (GBM)
 	//
 	// The Global Branch Mask (GBM) is a bit vector that keeps track of
 	// all unresolved branches. A '1' bit corresponds to an unresolved
@@ -159,33 +164,87 @@ private:
 	// unresolved branches. The maximum number of unresolved branches
 	// is configurable by the user of the simulator, and can range from
 	// 1 to 64.
-	/////////////////////////////////////////////////////////////////////
-    std::vector<Checkpoint> checkpoints;
+    /////////////////////////////////////////////////////////////////////
+	std::vector<Checkpoint> checkpoints;
     uint64_t GBM; 
+    uint64_t valid_branch_mask; // Added from teammate
 
-	/////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
 	// Structure 8: Branch Checkpoints
 	//
 	// Each branch checkpoint contains the following:
 	// 1. Shadow Map Table (checkpointed Rename Map Table)
 	// 2. checkpointed Free List head pointer and its phase bit
 	// 3. checkpointed GBM
-	/////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////
     uint64_t n_log_regs;
     uint64_t n_phys_regs;
     uint64_t n_branches;
     uint64_t n_active;
-
+    valpred *vp;
+	
 
     /////////////////////////////////////////////////////////////////////
-	// Private functions.
+    // Private functions.
 	// e.g., a generic function to copy state from one map to another.
-	/////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
     uint64_t calc_free_list_size();
     uint64_t calc_active_list_size();
 
+    inline void advance_ptr(uint64_t &idx, bool &phase, uint64_t size) {
+        idx++;
+        if (idx >= size) {
+            idx = 0;
+            phase ^= 1;
+        }
+    }
+
+    inline bool ring_empty(uint64_t h, uint64_t t, bool hp, bool tp) const {
+        return (h == t) && (hp == tp);
+    }
+    
+    inline bool ring_full(uint64_t h, uint64_t t, bool hp, bool tp) const {
+        return (h == t) && (hp != tp);
+    }
+
+    inline uint64_t ring_occupancy(uint64_t h, uint64_t t, bool hp, bool tp, uint64_t size) const {
+        if (ring_empty(h, t, hp, tp)) return 0;
+        if (ring_full(h, t, hp, tp)) return size;
+        if (hp == tp) return (t - h);
+        return (size - h) + t;
+    }
+
+    inline uint64_t free_list_count() const {
+        return ring_occupancy(fl_head, fl_tail, fl_head_phase, fl_tail_phase, FL.size());
+    }
+    inline bool free_list_empty() const { return ring_empty(fl_head, fl_tail, fl_head_phase, fl_tail_phase); }
+    inline bool free_list_full()  const { return ring_full (fl_head, fl_tail, fl_head_phase, fl_tail_phase); }
+
+    inline uint64_t free_list_pop() {
+        assert(!free_list_empty());
+        uint64_t p = FL[fl_head];
+        advance_ptr(fl_head, fl_head_phase, FL.size());
+        return p;
+    }
+    
+    inline void free_list_push(uint64_t p) {
+        assert(!free_list_full());
+        FL[fl_tail] = p;
+        advance_ptr(fl_tail, fl_tail_phase, FL.size());
+    }
+
+    inline uint64_t active_list_occ() const {
+        return ring_occupancy(al_head, al_tail, al_head_phase, al_tail_phase, AL.size());
+    }
+    inline uint64_t active_list_free() const { return AL.size() - active_list_occ(); }
+    inline bool active_list_empty() const { return ring_empty(al_head, al_tail, al_head_phase, al_tail_phase); }
+    inline bool active_list_full()  const { return ring_full (al_head, al_tail, al_head_phase, al_tail_phase); }
+
+    // Private helper for branch recovery
+    void vpq_restore_tail(uint64_t tail, bool tail_phase);
+
 public:
-	/////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
 	// This is the constructor function.
 	// When a renamer object is instantiated, the caller indicates:
 	// 1. The number of logical registers (e.g., 32).
@@ -216,9 +275,9 @@ public:
 	/////////////////////////////////////////////////////////////////////
     ~renamer();
 
- 	//////////////////////////////////////////
-	// Functions related to Rename Stage.   //
-	//////////////////////////////////////////
+    //////////////////////////////////////////
+    // Functions related to Rename Stage.   //
+    //////////////////////////////////////////
 
 	/////////////////////////////////////////////////////////////////////
 	// The Rename Stage must stall if there aren't enough free physical
@@ -290,10 +349,20 @@ public:
 	// 3. checkpointed GBM
 	/////////////////////////////////////////////////////////////////////   
     uint64_t checkpoint();
-    
-	//////////////////////////////////////////
-	// Functions related to Dispatch Stage. //
-	//////////////////////////////////////////
+
+    // Value Prediction Rename functions (Added from teammate)
+    void set_checkpoint_vpq_tail(uint64_t branch_ID, uint64_t vpq_tail, bool vpq_tail_phase);
+    void get_checkpoint_vpq_tail(uint64_t branch_ID, uint64_t &vpq_tail, bool &vpq_tail_phase) const;
+    bool stall_vp(uint64_t bundle_valpred);
+    void vpq_checkpoint(uint64_t branch_ID);
+    void vp_predict(uint64_t pc, bool &pred_avail, bool &confident, uint64_t &prediction);
+    uint64_t vpq_alloc(uint64_t pc);
+    void valpred_sitter(uint64_t valpred_index, uint64_t value);
+    void vp_retire(uint64_t valpred_index);
+
+    //////////////////////////////////////////
+    // Functions related to Dispatch Stage. //
+    //////////////////////////////////////////
 
 
     	/////////////////////////////////////////////////////////////////////
@@ -350,9 +419,9 @@ public:
     void clear_ready(uint64_t phys_reg);
 
     //////////////////////////////////////////
-	// Functions related to the Reg. Read   //
-	// and Execute Stages.                  //
-	//////////////////////////////////////////
+    // Functions related to the Reg. Read   //
+    // and Execute Stages.                  //
+    //////////////////////////////////////////
 
 	/////////////////////////////////////////////////////////////////////
 	// Return the contents (value) of the indicated physical register.
@@ -361,8 +430,8 @@ public:
     uint64_t read(uint64_t phys_reg);
 
     //////////////////////////////////////////
-	// Functions related to Writeback Stage.//
-	//////////////////////////////////////////
+    // Functions related to Writeback Stage.//
+    //////////////////////////////////////////
 
 	/////////////////////////////////////////////////////////////////////
 	// Write a value into the indicated physical register.
@@ -425,8 +494,8 @@ public:
     void resolve(uint64_t AL_index, uint64_t branch_ID, bool correct);
 
     //////////////////////////////////////////
-	// Functions related to Retire Stage.   //
-	//////////////////////////////////////////
+    // Functions related to Retire Stage.   //
+    //////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////
 	// This function allows the caller to examine the instruction at the head
@@ -457,7 +526,7 @@ public:
 	// * csr flag (whether or not instr. is a system instruction)
 	// * program counter of the instruction
 	/////////////////////////////////////////////////////////////////////
-    
+
     bool precommit(bool &completed, bool &exception, bool &load_viol, bool &br_misp, 
                    bool &val_misp, bool &load, bool &store, bool &branch, bool &amo, 
                    bool &csr, uint64_t &offending_PC);
@@ -493,9 +562,9 @@ public:
 	/////////////////////////////////////////////////////////////////////
     void squash();
 
-	//////////////////////////////////////////
-	// Functions not tied to specific stage.//
-	//////////////////////////////////////////
+    //////////////////////////////////////////
+    // Functions not tied to specific stage.//
+    //////////////////////////////////////////
 
 	/////////////////////////////////////////////////////////////////////
 	// Functions for individually setting the exception bit,

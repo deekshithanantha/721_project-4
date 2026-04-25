@@ -1,4 +1,5 @@
 #include "pipeline.h"
+#include "debug.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -25,7 +26,7 @@ void pipeline_t::rename1() {
    // between rename1 and rename2 still has a rename bundle.
 
    if (RENAME2[0].valid) { // The current rename bundle is stalled.
-      return; 
+      return;
       
    }
 
@@ -48,10 +49,27 @@ void pipeline_t::rename1() {
    }
 }
 
+static inline bool valpred_correct_func(const payload_t &p) {
+   if (!p.C_valid)
+      return false;
+
+   if (IS_INTALU(p.flags))
+      return valpred_INTALU;
+
+   if (IS_FPALU(p.flags))
+      return valpred_FPALU;
+
+   if (IS_LOAD(p.flags) && !IS_AMO(p.flags))
+      return valpred_LOAD_val;
+
+   return false;
+}
+
 void pipeline_t::rename2() {
    unsigned int i;
    unsigned int index;
    unsigned int bundle_dst, bundle_branch;
+   unsigned int bundle_valpred;
 
    // Stall the rename2 sub-stage if either:
    // (1) There isn't a current rename bundle.
@@ -66,6 +84,8 @@ void pipeline_t::rename2() {
    // Third stall condition: There aren't enough rename resources for the current rename bundle.
    bundle_dst = 0;
    bundle_branch = 0;
+   bundle_valpred = 0;
+
    for (i = 0; i < dispatch_width; i++) {
       if (!RENAME2[i].valid)
          break; // Not a valid instruction: Reached the end of the rename bundle so exit loop.
@@ -93,7 +113,11 @@ void pipeline_t::rename2() {
       if (PAY.buf[index].C_valid) {
          bundle_dst++;
       }
-      // FIX_ME #1 END
+      if (valpred_Stride_selector && valpred_correct_func(PAY.buf[index]))
+      {
+            bundle_valpred++;
+      }
+            // FIX_ME #1 END
    }
 
    // FIX_ME #2
@@ -107,9 +131,9 @@ void pipeline_t::rename2() {
    // This is achieved by doing nothing and proceeding to the next statements.
 
    // FIX_ME #2 BEGIN
-   if (REN->stall_branch(bundle_branch) || REN->stall_reg(bundle_dst)) {
-      return;
-   }
+      if (REN->stall_branch(bundle_branch) || REN->stall_reg(bundle_dst) || REN->stall_vp(bundle_valpred)) { 
+         return;
+        }
    // FIX_ME #2 END
 
    //
@@ -174,9 +198,69 @@ void pipeline_t::rename2() {
       //    so that the branch ID can be used in subsequent pipeline stages.
 
       // FIX_ME #5 BEGIN
-      if (PAY.buf[index].checkpoint) {
-         PAY.buf[index].branch_ID = REN->checkpoint();
+      auto &entry = PAY.buf[index];
+
+      // ---- Branch checkpoint handling ----
+      if (entry.checkpoint)
+      {
+         unsigned int new_bid = REN->checkpoint();
+         entry.branch_ID = new_bid;
+
+         if (valpred_Stride_selector)
+         {
+            REN->vpq_checkpoint(new_bid);
+         }
       }
+
+      // ---- Initialize value prediction metadata ----
+      entry.valpred_eligible     = valpred_correct_func(entry);
+      entry.valpred_availability = false;
+      entry.valpred_confidence   = false;
+      entry.valpred_use_stat     = false;
+      entry.valpred_correct      = false;
+      entry.valpred_Q_stat       = false;
+      entry.valpred_index        = 0;
+      entry.valpred_destination  = 0;
+
+      // ---- Value prediction logic ----
+      if (entry.valpred_eligible)
+      {
+         // Perfect predictor path
+         if (valpred_PERFECT && entry.good_instruction)
+         {
+            db_t *real_val = get_pipe()->peek(entry.db_index);
+
+            entry.valpred_destination  = real_val->a_rdst[0].value;
+            entry.valpred_confidence   = true;
+            entry.valpred_availability = true;
+         }
+         // Stride predictor path
+         else if (valpred_Stride_selector)
+         {
+            REN->vp_predict(entry.pc,
+                              entry.valpred_availability,
+                              entry.valpred_confidence,
+                              entry.valpred_destination);
+
+            if (valpred_confidence)
+            {
+                  if (entry.valpred_availability && entry.good_instruction)
+                  {
+                     db_t *real_val = get_pipe()->peek(entry.db_index);
+                     entry.valpred_confidence =
+                        (entry.valpred_destination == real_val->a_rdst[0].value);
+                  }
+                  else
+                  {
+                     entry.valpred_confidence = false;
+                  }
+            }
+
+            entry.valpred_Q_stat = true;
+            entry.valpred_index  = REN->vpq_alloc(entry.pc);
+         }
+      }
+
       // FIX_ME #5 END
    }
 

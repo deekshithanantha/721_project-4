@@ -97,7 +97,7 @@ void pipeline_t::dispatch() {
 
    // FIX_ME #6 BEGIN
    if (REN->stall_dispatch(i)) {
-      return;
+       return;
    }
    // FIX_ME #6 END
 
@@ -151,13 +151,13 @@ void pipeline_t::dispatch() {
 
       PAY.buf[index].AL_index = REN->dispatch_inst(
          PAY.buf[index].C_valid,
-         PAY.buf[index].C_log_reg,
-         PAY.buf[index].C_phys_reg,
-         load_flag,
-         store_flag,
-         branch_flag,
-         amo_flag,
-         csr_flag,
+                           PAY.buf[index].C_log_reg,
+                           PAY.buf[index].C_phys_reg,
+                           load_flag,
+                           store_flag,
+                           branch_flag,
+                           amo_flag,
+                           csr_flag,
          PAY.buf[index].pc
       );
       // FIX_ME #7 END
@@ -198,7 +198,20 @@ void pipeline_t::dispatch() {
 
       // FIX_ME #9 BEGIN
       if (PAY.buf[index].C_valid) {
-         REN->clear_ready(PAY.buf[index].C_phys_reg);
+
+         if (PAY.buf[index].valpred_confidence) 
+         {
+            PAY.buf[index].valpred_use_stat = true;
+            REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].valpred_destination);
+            
+            REN->set_ready(PAY.buf[index].C_phys_reg);
+            
+         }
+         else 
+         {
+            REN->clear_ready(PAY.buf[index].C_phys_reg);
+         }
+         
       }
       // FIX_ME #9 END
 
@@ -293,9 +306,9 @@ void pipeline_t::dispatch() {
          // Check if any previous pipeline stage posted an exception.
          if (PAY.buf[index].trap.valid()) {
             // *** FIX_ME #10b (part 2): Set exception bit in Active List.
-            // FIX_ME #10b2 BEGIN
-            REN->set_exception(PAY.buf[index].AL_index);
-            // FIX_ME #10b2 END
+         // FIX_ME #10b2 BEGIN
+         REN->set_exception(PAY.buf[index].AL_index);
+         // FIX_ME #10b2 END
          }
          break;
 

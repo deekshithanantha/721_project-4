@@ -80,6 +80,10 @@ void pipeline_t::retire(size_t &instret) {
          //
 
          // FIX_ME #17b BEGIN
+         if (PAY.buf[PAY.head].valpred_Q_stat) {
+            REN->vp_retire(PAY.buf[PAY.head].valpred_index);
+         }
+
          REN->commit();
          // FIX_ME #17b END
 
@@ -119,6 +123,7 @@ void pipeline_t::retire(size_t &instret) {
             num_insn++;
             instret++;
             inc_counter(commit_count);
+            valpred_calaclator(&PAY.buf[PAY.head]);
          }
          if (PAY.buf[PAY.head].split && PAY.buf[PAY.head].upper)
             inc_counter(split_count);
@@ -146,7 +151,7 @@ void pipeline_t::retire(size_t &instret) {
             else
                next_inst_pc = INCREMENT_PC(PAY.buf[PAY.head].pc);
 
-            if (STORE_SETS) {
+            if (STORE_SETS || ORACLE_MDP) {
                MDP->squash();
             }
             // The head instruction was already committed above (fix #17b).
@@ -183,7 +188,7 @@ void pipeline_t::retire(size_t &instret) {
                MDP->update(load_pc, store_pc_violation);
             }
          }
-         if (STORE_SETS) {
+         if (STORE_SETS || ORACLE_MDP) {
             MDP->squash();
          }
 
@@ -204,7 +209,7 @@ void pipeline_t::retire(size_t &instret) {
          }
          trap = PAY.buf[PAY.head].trap.get();
 
-         if (STORE_SETS) {
+         if (STORE_SETS || ORACLE_MDP) {
             MDP->squash();
          }
 
@@ -222,6 +227,10 @@ void pipeline_t::retire(size_t &instret) {
          }
 
          // Keep track of the number of retired instructions.
+         if (!PAY.buf[PAY.head].split || !PAY.buf[PAY.head].upper) 
+         {
+            valpred_calaclator(&PAY.buf[PAY.head]);
+         }
          instret++;
          num_insn++;
          inc_counter(commit_count);

@@ -73,10 +73,43 @@ void pipeline_t::execute(unsigned int lane_number) {
             // check the existence (validity) of a destination register.
 
             // FIX_ME #13 BEGIN
-            if (hit && PAY.buf[index].C_valid) {
-               IQ.wakeup(PAY.buf[index].C_phys_reg, true);
+            if (hit && PAY.buf[index].C_valid) 
+            {
+               if (PAY.buf[index].valpred_Q_stat)
+               {
+                  REN->valpred_sitter(PAY.buf[index].valpred_index, PAY.buf[index].C_value.dw);
+               }
+
+
+               if (PAY.buf[index].valpred_availability)
+               {
+                  PAY.buf[index].valpred_correct = (PAY.buf[index].valpred_destination == PAY.buf[index].C_value.dw);
+               }
+               else
+               {
+                  PAY.buf[index].valpred_correct = false;
+               }
+
+
+               if (PAY.buf[index].valpred_use_stat && !PAY.buf[index].valpred_correct)
+               {
+                  set_value_misprediction(PAY.buf[index].AL_index);
+               }
+
+
+               if (!PAY.buf[index].valpred_use_stat)
+               {
+                  IQ.wakeup(PAY.buf[index].C_phys_reg, true);
+               }
+
+
                REN->set_ready(PAY.buf[index].C_phys_reg);
-               REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+
+
+               if (!PAY.buf[index].valpred_use_stat || !PAY.buf[index].valpred_correct)
+               {
+                     REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+               }
             }
 
             // FIX_ME #13 END
@@ -134,8 +167,31 @@ void pipeline_t::execute(unsigned int lane_number) {
          // You don't have to decode the instruction, rather, just check the existence (validity) of a destination register.
 
          // FIX_ME #14 BEGIN
-         if (PAY.buf[index].C_valid) {
-            REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+         if (PAY.buf[index].C_valid && !PAY.buf[index].trap.valid()) {
+
+            if (PAY.buf[index].valpred_Q_stat)
+            {
+               REN->valpred_sitter(PAY.buf[index].valpred_index, PAY.buf[index].C_value.dw);
+            }
+
+            if (PAY.buf[index].valpred_availability)
+            {
+               PAY.buf[index].valpred_correct = (PAY.buf[index].valpred_destination == PAY.buf[index].C_value.dw);
+            }
+            else
+            {
+               PAY.buf[index].valpred_correct = false;
+            }   
+            
+            if (PAY.buf[index].valpred_use_stat && !PAY.buf[index].valpred_correct)
+            {
+               set_value_misprediction(PAY.buf[index].AL_index);
+            }   
+
+            if (!PAY.buf[index].valpred_use_stat || !PAY.buf[index].valpred_correct)
+            {   
+               REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+            }
          }
          // FIX_ME #14 END
       }
@@ -193,7 +249,11 @@ void pipeline_t::execute(unsigned int lane_number) {
 
          // FIX_ME #11b BEGIN
          if (PAY.buf[index].C_valid && !IS_LOAD(PAY.buf[index].flags) && !IS_AMO(PAY.buf[index].flags)) {
-            IQ.wakeup(PAY.buf[index].C_phys_reg, true);
+            
+            if (!PAY.buf[index].valpred_use_stat) 
+            {
+               IQ.wakeup(PAY.buf[index].C_phys_reg, true);
+            }
             REN->set_ready(PAY.buf[index].C_phys_reg);
          }
 
@@ -250,9 +310,38 @@ void pipeline_t::load_replay() {
          // 2. See #13 (in execute.cc), and implement steps 3a,3b,3c.
 
          // FIX_ME #18a BEGIN
-         IQ.wakeup(PAY.buf[index].C_phys_reg, true);
+         if (PAY.buf[index].valpred_Q_stat)
+         {
+            REN->valpred_sitter(PAY.buf[index].valpred_index, PAY.buf[index].C_value.dw);
+         }
+         
+         
+         if (PAY.buf[index].valpred_availability)
+         {   
+            PAY.buf[index].valpred_correct = (PAY.buf[index].valpred_destination == PAY.buf[index].C_value.dw);
+         }
+         
+         else
+         {
+            PAY.buf[index].valpred_correct = false;
+         }
+
+         if (PAY.buf[index].valpred_use_stat && !PAY.buf[index].valpred_correct)
+         {
+            set_value_misprediction(PAY.buf[index].AL_index);
+         }
+
+         if (!PAY.buf[index].valpred_use_stat)
+         {
+            IQ.wakeup(PAY.buf[index].C_phys_reg, true);
+         }
+         
          REN->set_ready(PAY.buf[index].C_phys_reg);
-         REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+         
+         if (!PAY.buf[index].valpred_use_stat || !PAY.buf[index].valpred_correct)
+         {  
+            REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+         }
          // FIX_ME #18a END
       }
 

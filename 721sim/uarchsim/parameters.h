@@ -116,4 +116,20 @@ extern uint64_t stop_amt;
 extern uint64_t phase_interval;
 extern uint64_t verbose_phase_counters;
 
+
+// Value pred variables added
+extern uint64_t valpred_SIZE;
+extern uint64_t stride_valpred_index;
+extern uint64_t stride_valpred_tag;
+extern uint64_t stride_MAX_confidencce;
+
+extern bool valpred_PERFECT;
+extern bool valpred_Stride_selector;
+extern bool valpred_ENABLE;
+extern bool valpred_confidence;
+extern bool valpred_INTALU;
+extern bool valpred_FPALU;
+extern bool valpred_LOAD_val;
+
+
 #endif //PARAMETERS_H

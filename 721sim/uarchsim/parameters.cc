@@ -46,6 +46,24 @@ bool SPLIT_STORES = false;
 
 bool PRESTEER = false;
 bool IDEAL_AGE_BASED = false;
+
+// Value predicetion
+
+bool valpred_ENABLE = false;
+bool valpred_PERFECT = false;
+bool valpred_Stride_selector = false;
+bool valpred_confidence = false;
+
+bool valpred_INTALU = false;
+bool valpred_FPALU = false;
+bool valpred_LOAD_val = false;
+
+//stride Value predictor
+uint64_t valpred_SIZE = 0;
+uint64_t stride_valpred_index = 0;
+uint64_t stride_valpred_tag = 0;
+uint64_t stride_MAX_confidencce = 0;
+
 uint32_t FU_LANE_MATRIX[(unsigned int) NUMBER_FU_TYPES] = {
    0x5A5A /*     BR: 0101 1010 */,
    0x2121 /*     LS: 0010 0001 */,
