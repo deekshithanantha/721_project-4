@@ -205,6 +205,14 @@ void renamer::vpq_restore_tail(uint64_t tail, bool tail_phase) {
     vp->vpq_restore_tail(tail, tail_phase);
 }
 
+void renamer::vtage_branch_checkpoint(uint64_t branch_ID, bool predicted_taken) {
+    vp->vtage_branch_checkpoint(branch_ID, predicted_taken);
+}
+
+void renamer::vtage_bhr_restore(uint64_t branch_ID) {
+    vp->vtage_bhr_restore(branch_ID);
+}
+
 bool renamer::stall_dispatch(uint64_t bundle_inst) {
     uint64_t used_al;
     if (al_head_phase == al_tail_phase) {
@@ -307,8 +315,11 @@ void renamer::resolve(uint64_t AL_index, uint64_t branch_ID, bool correct) {
     al_tail = new_tail_idx;
     al_tail_phase = new_tail_phase;
 
-    if (valpred_Stride_selector) {
+    if (valpred_Stride_selector || valpred_VTAGE_selector) {
         vpq_restore_tail(checkpoints[branch_ID].vpq_tail, checkpoints[branch_ID].vpq_tail_phase);
+    }
+    if (valpred_VTAGE_selector) {
+        vtage_bhr_restore(branch_ID);
     }
 
     assert((GBM & bit) == 0ULL);

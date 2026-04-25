@@ -490,6 +490,51 @@ pipeline_t::pipeline_t(
                  svp_entries, bits_per_entry, total_bits);
          fprintf(stats_log, "   Total storage cost (bytes) = %.2f B (%.2f KB)\n", total_bytes, total_kb);
       }
+      else if (valpred_VTAGE_selector) {
+         uint64_t conf_bits = log2_val_func(vtage_conf_max + 1);
+         uint64_t base_size = (1ULL << vtage_base_idx_bits);
+         uint64_t tagged_size = (1ULL << vtage_tagged_idx_bits);
+
+         
+         uint64_t base_bits_per_entry = 64 + conf_bits;
+         uint64_t base_total = base_size * base_bits_per_entry;
+
+         uint64_t tagged_bits_per_entry = 1 + vtage_tag_bits + 64 + conf_bits + 1;
+         uint64_t tagged_total = vtage_num_tables * tagged_size * tagged_bits_per_entry;
+
+         uint64_t total_bits = base_total + tagged_total;
+         double total_bytes = (double) total_bits / 8.0;
+         double total_kb = total_bytes / 1024.0;
+
+         fprintf(stats_log, "VALUE PREDICTOR = VTAGE (competition phase)\n");
+         fprintf(stats_log, "   VPQsize              = %" PRIu64 "\n", valpred_SIZE);
+         fprintf(stats_log, "   oracleconf           = %d (%s confidence)\n",
+                 valpred_confidence ? 1 : 0,
+                 valpred_confidence ? "oracle" : "real");
+         fprintf(stats_log, "   num_tables (T)       = %" PRIu64 "\n", vtage_num_tables);
+         fprintf(stats_log, "   base_idx_bits        = %" PRIu64 "  (base size = %" PRIu64 " entries)\n", vtage_base_idx_bits, base_size);
+         fprintf(stats_log, "   tagged_idx_bits      = %" PRIu64 "  (each tagged table size = %" PRIu64 " entries)\n", vtage_tagged_idx_bits, tagged_size);
+         fprintf(stats_log, "   min_hist_len         = %" PRIu64 "\n", vtage_min_hist_len);
+         fprintf(stats_log, "   tag_bits             = %" PRIu64 "\n", vtage_tag_bits);
+         fprintf(stats_log, "   conf_max             = %" PRIu64 "\n", vtage_conf_max);
+
+         fprintf(stats_log, "\nCOST ACCOUNTING\n");
+         fprintf(stats_log, "   Base table (%" PRIu64 " entries):\n", base_size);
+         fprintf(stats_log, "      value         : %3d bits\n", 64);
+         fprintf(stats_log, "      conf          : %3" PRIu64 " bits\n", conf_bits);
+         fprintf(stats_log, "      bits/entry    : %3" PRIu64 " bits\n", base_bits_per_entry);
+         fprintf(stats_log, "      subtotal      : %" PRIu64 " bits\n", base_total);
+         fprintf(stats_log, "   Tagged tables (%" PRIu64 " tables x %" PRIu64 " entries each):\n", vtage_num_tables, tagged_size);
+         fprintf(stats_log, "      valid         :   1 bit\n");
+         fprintf(stats_log, "      tag           : %3" PRIu64 " bits\n", vtage_tag_bits);
+         fprintf(stats_log, "      value         : %3d bits\n", 64);
+         fprintf(stats_log, "      conf          : %3" PRIu64 " bits\n", conf_bits);
+         fprintf(stats_log, "      useful        :   1 bit\n");
+         fprintf(stats_log, "      bits/entry    : %3" PRIu64 " bits\n", tagged_bits_per_entry);
+         fprintf(stats_log, "      subtotal      : %" PRIu64 " bits\n", tagged_total);
+         fprintf(stats_log, "   Total storage cost (bits) = %" PRIu64 " bits\n", total_bits);
+         fprintf(stats_log, "   Total storage cost (bytes) = %.2f B (%.2f KB)\n", total_bytes, total_kb);
+      }
    }
 
    fprintf(stats_log, "\n=== INTERNAL SIMULATOR STRUCTURES ===============================================\n\n");

@@ -1,11 +1,14 @@
 #include "valpred.h"
+#include "vtage.h"
 #include "parameters.h"
 #include <cassert>
 #include <cstring>
 
 #define MOD_INC(val, size) ((val + 1) % size)
 
-valpred::valpred(uint64_t n_branches) : n_branches(n_branches) {
+valpred::valpred(uint64_t n_branches) : vt(nullptr),
+    last_bhr_snapshot(0), last_vtage_provider(-1), n_branches(n_branches) {
+
     // Initialize Stride Value Predictor (SVP)
     if (valpred_Stride_selector) {
         SVP_num_entries = (1ULL << stride_valpred_index);
@@ -28,37 +31,51 @@ valpred::valpred(uint64_t n_branches) : n_branches(n_branches) {
     VPQ_size = (valpred_SIZE ? valpred_SIZE : 1);
     VPQ.resize(VPQ_size);
     for (uint64_t i = 0; i < VPQ_size; i++) {
-        VPQ[i].valid = false;
-        VPQ[i].pc = 0;
-        VPQ[i].value = 0;
-        VPQ[i].value_valid = false;
+        VPQ[i].valid        = false;
+        VPQ[i].pc           = 0;
+        VPQ[i].value        = 0;
+        VPQ[i].value_valid  = false;
+        VPQ[i].bhr_snapshot = 0;
+        VPQ[i].vtage_provider = -1;
     }
 
     VPQ_head = 0;
     VPQ_tail = 0;
     VPQ_head_phase = 0;
     VPQ_tail_phase = 0;
+
+    // Initialize VTAGE if selected.
+    if (valpred_VTAGE_selector) {
+        vt = new vtage(n_branches,
+                       vtage_num_tables,
+                       vtage_base_idx_bits,
+                       vtage_tagged_idx_bits,
+                       vtage_min_hist_len,
+                       vtage_tag_bits,
+                       vtage_conf_max);
+    }
 }
 
-valpred::~valpred() {}
+valpred::~valpred() {
+    if (vt) delete vt;
+}
 
 bool valpred::stall_vp(uint64_t bundle_valpred) {
-    if (!valpred_Stride_selector) return false;
-    
+    if (!valpred_Stride_selector && !valpred_VTAGE_selector) return false;
+
     uint64_t used_vpq;
     if (VPQ_head_phase == VPQ_tail_phase) {
         used_vpq = VPQ_tail - VPQ_head;
     } else {
         used_vpq = VPQ_size - VPQ_head + VPQ_tail;
     }
-    
+
     uint64_t free_vpq = VPQ_size - used_vpq;
     return (free_vpq < bundle_valpred);
 }
 
 void valpred::set_checkpoint_vpq_tail(uint64_t vpq_tail, bool vpq_tail_phase) {
-    // This function is called by renamer to store VP state in checkpoints
-    // The actual storage is handled by renamer's checkpoint structure
+    // Storage is handled by renamer's checkpoint structure.
 }
 
 void valpred::get_checkpoint_vpq_tail(uint64_t &vpq_tail, bool &vpq_tail_phase) const {
@@ -92,13 +109,21 @@ bool valpred::svp_hit(uint64_t pc, uint64_t &idx) const {
 }
 
 void valpred::vpq_checkpoint() {
-    // VPQ tail is checkpointed by calling get_checkpoint_vpq_tail
+    // VPQ tail is returned via get_checkpoint() — no action needed here.
 }
 
 void valpred::vp_predict(uint64_t pc, bool &pred_avail, bool &confident, uint64_t &prediction) {
     pred_avail = false;
-    confident = false;
+    confident  = false;
     prediction = 0;
+    last_bhr_snapshot  = 0;
+    last_vtage_provider = -1;
+
+    if (valpred_VTAGE_selector) {
+        last_bhr_snapshot = vt->get_spec_bhr();
+        last_vtage_provider = vt->predict(pc, pred_avail, confident, prediction);
+        return;
+    }
 
     if (!valpred_Stride_selector) return;
 
@@ -115,15 +140,17 @@ void valpred::vp_predict(uint64_t pc, bool &pred_avail, bool &confident, uint64_
 }
 
 uint64_t valpred::vpq_alloc(uint64_t pc) {
-    assert(valpred_Stride_selector);
+    assert(valpred_Stride_selector || valpred_VTAGE_selector);
     assert(!stall_vp(1));
 
     uint64_t idx = VPQ_tail;
 
-    VPQ[idx].valid = true;
-    VPQ[idx].pc = pc;
-    VPQ[idx].value = 0;
-    VPQ[idx].value_valid = false;
+    VPQ[idx].valid          = true;
+    VPQ[idx].pc             = pc;
+    VPQ[idx].value          = 0;
+    VPQ[idx].value_valid    = false;
+    VPQ[idx].bhr_snapshot   = last_bhr_snapshot;
+    VPQ[idx].vtage_provider = last_vtage_provider;
 
     VPQ_tail = MOD_INC(VPQ_tail, VPQ_size);
     if (VPQ_tail == 0) VPQ_tail_phase = !VPQ_tail_phase;
@@ -135,7 +162,7 @@ void valpred::valpred_sitter(uint64_t idx, uint64_t value) {
     assert(idx < VPQ_size);
     assert(VPQ[idx].valid);
 
-    VPQ[idx].value = value;
+    VPQ[idx].value       = value;
     VPQ[idx].value_valid = true;
 }
 
@@ -164,21 +191,29 @@ uint64_t valpred::vpq_count_pc(uint64_t pc) const {
 }
 
 void valpred::vp_retire(uint64_t idx) {
-    assert(valpred_Stride_selector);
+    assert(valpred_Stride_selector || valpred_VTAGE_selector);
     assert(!(VPQ_head == VPQ_tail && VPQ_head_phase == VPQ_tail_phase));
     assert(VPQ_head == idx);
     assert(VPQ[VPQ_head].valid);
     assert(VPQ[VPQ_head].value_valid);
 
-    uint64_t pc = VPQ[VPQ_head].pc;
-    uint64_t value = VPQ[VPQ_head].value;
+    uint64_t pc          = VPQ[VPQ_head].pc;
+    uint64_t value       = VPQ[VPQ_head].value;
+    uint64_t bhr_snap    = VPQ[VPQ_head].bhr_snapshot;
+    int      provider    = VPQ[VPQ_head].vtage_provider;
 
-    VPQ[VPQ_head].valid = false;
+    VPQ[VPQ_head].valid       = false;
     VPQ[VPQ_head].value_valid = false;
 
     VPQ_head = MOD_INC(VPQ_head, VPQ_size);
     if (VPQ_head == 0) VPQ_head_phase = !VPQ_head_phase;
 
+    if (valpred_VTAGE_selector) {
+        vt->train(pc, value, provider, bhr_snap);
+        return;
+    }
+
+    // SVP training path.
     uint64_t svp_idx = svp_index(pc);
     bool hit = svp_hit(pc, svp_idx);
 
@@ -210,46 +245,78 @@ void valpred::vp_retire(uint64_t idx) {
 }
 
 void valpred::vpq_restore_tail(uint64_t tail, bool tail_phase) {
-    if (!valpred_Stride_selector) return;
+    if (!valpred_Stride_selector && !valpred_VTAGE_selector) return;
 
-    uint64_t idx = tail;
-    bool phase = tail_phase;
+    if (valpred_Stride_selector) {
+        // SVP: walk discarded entries and repair instance counters.
+        uint64_t idx = tail;
+        bool phase = tail_phase;
 
-    while (!((idx == VPQ_tail) && (phase == VPQ_tail_phase))) {
-        if (VPQ[idx].valid) {
-            uint64_t svp_idx = 0;
-            if (svp_hit(VPQ[idx].pc, svp_idx) && SVP[svp_idx].instance > 0) {
-                SVP[svp_idx].instance--;
+        while (!((idx == VPQ_tail) && (phase == VPQ_tail_phase))) {
+            if (VPQ[idx].valid) {
+                uint64_t svp_idx = 0;
+                if (svp_hit(VPQ[idx].pc, svp_idx) && SVP[svp_idx].instance > 0) {
+                    SVP[svp_idx].instance--;
+                }
+                VPQ[idx].valid = false;
+                VPQ[idx].value_valid = false;
             }
-            VPQ[idx].valid = false;
-            VPQ[idx].value_valid = false;
+            idx++;
+            if (idx >= VPQ_size) {
+                idx = 0;
+                phase ^= 1;
+            }
         }
-        idx++;
-        if (idx >= VPQ_size) {
-            idx = 0;
-            phase ^= 1;
+    } else {
+        // VTAGE: just invalidate discarded VPQ entries.
+        uint64_t idx = tail;
+        bool phase = tail_phase;
+
+        while (!((idx == VPQ_tail) && (phase == VPQ_tail_phase))) {
+            VPQ[idx].valid      = false;
+            VPQ[idx].value_valid = false;
+            idx++;
+            if (idx >= VPQ_size) {
+                idx = 0;
+                phase ^= 1;
+            }
         }
     }
+
     VPQ_tail = tail;
     VPQ_tail_phase = tail_phase;
 }
 
 void valpred::reset() {
-    if (valpred_Stride_selector) {
+    if (valpred_Stride_selector || valpred_VTAGE_selector) {
         VPQ_head = 0;
         VPQ_tail = 0;
         VPQ_head_phase = 0;
         VPQ_tail_phase = 0;
 
         for (uint64_t i = 0; i < VPQ_size; i++) {
-            VPQ[i].valid = false;
+            VPQ[i].valid       = false;
             VPQ[i].value_valid = false;
         }
+    }
 
+    if (valpred_Stride_selector) {
         for (uint64_t i = 0; i < SVP_num_entries; i++) {
             SVP[i].instance = 0;
         }
     }
+
+    if (valpred_VTAGE_selector && vt) {
+        vt->reset();
+    }
+}
+
+void valpred::vtage_branch_checkpoint(uint64_t branch_id, bool predicted_taken) {
+    if (vt) vt->branch_checkpoint(branch_id, predicted_taken);
+}
+
+void valpred::vtage_bhr_restore(uint64_t branch_id) {
+    if (vt) vt->bhr_restore(branch_id);
 }
 
 valpred::VP_Checkpoint valpred::get_checkpoint() const {

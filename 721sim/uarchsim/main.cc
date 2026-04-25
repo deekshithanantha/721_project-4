@@ -36,6 +36,7 @@ static void help() {
    fprintf(stderr, "  --perf=<pbp>,<pdc>,<pic>,<ptc>\tEach of pbp (perf. branch pred.), pdc (perf. D$), pic (perf. I$), and ptc (perf. T$), are 0 or 1\n");
    fprintf(stderr, "  --vp-perf=1\n");
    fprintf(stderr, "  --vp-svp=<VPQsize>,<oracleconf>,<#index bits>,<#tag bits>,<confmax>\n");
+   fprintf(stderr, "  --vp-vtage=<VPQsize>,<oracleconf>,<T>,<base_idx_bits>,<tagged_idx_bits>,<min_hist_len>,<tag_bits>,<confmax>\n");
    fprintf(stderr, "  --vp-eligible=<predINTALU>,<predFPALU>,<predLOAD>\n");
    fprintf(stderr, "  --cp=<n>           <n> branch checkpoints for mispredict recovery\n");
 
@@ -268,6 +269,29 @@ static void set_valpred_stride(const char *config)
    stride_MAX_confidencce = max_conf;
 }
 
+static void set_valpred_vtage(const char *config)
+{
+   uint64_t vpq_size, oracleconf, T, base_idx, tagged_idx, min_hist, tag_bits, conf_max;
+   if (sscanf(config, "%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu",
+              &vpq_size, &oracleconf, &T, &base_idx, &tagged_idx,
+              &min_hist, &tag_bits, &conf_max) != 8) {
+      fprintf(stderr, "Usage: --vp-vtage=<vpqsize>,<oracleconf>,<T>,<base_idx_bits>,<tagged_idx_bits>,<min_hist_len>,<tag_bits>,<confmax>\n");
+      exit(-1);
+   }
+
+   valpred_ENABLE           = true;
+   valpred_VTAGE_selector   = true;
+   valpred_confidence       = (oracleconf ? true : false);
+
+   valpred_SIZE             = vpq_size;
+   vtage_num_tables         = T;
+   vtage_base_idx_bits      = base_idx;
+   vtage_tagged_idx_bits    = tagged_idx;
+   vtage_min_hist_len       = min_hist;
+   vtage_tag_bits           = tag_bits;
+   vtage_conf_max           = conf_max;
+}
+
 static void set_valpred_status(const char *config) {
    
    uint64_t INTALU, FPALU, LOAD;
@@ -476,6 +500,7 @@ int main(int argc, char **argv) {
    parser.option(0, "perf", 1, [&](const char *s) { set_perfect_flags(s); });
    parser.option(0, "vp-perf", 1, [&](const char *s) { set_valpred(s); });
    parser.option(0, "vp-svp", 1, [&](const char *s) { set_valpred_stride(s); });
+   parser.option(0, "vp-vtage", 1, [&](const char *s) { set_valpred_vtage(s); });
    parser.option(0, "vp-eligible", 1, [&](const char *s) { set_valpred_status(s); });
    parser.option(0, "cp", 1, [&](const char *s) { NUM_CHECKPOINTS = atoi(s); });
 

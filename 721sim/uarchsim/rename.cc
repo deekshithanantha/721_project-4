@@ -113,7 +113,7 @@ void pipeline_t::rename2() {
       if (PAY.buf[index].C_valid) {
          bundle_dst++;
       }
-      if (valpred_Stride_selector && valpred_correct_func(PAY.buf[index]))
+      if ((valpred_Stride_selector || valpred_VTAGE_selector) && valpred_correct_func(PAY.buf[index]))
       {
             bundle_valpred++;
       }
@@ -210,6 +210,12 @@ void pipeline_t::rename2() {
          {
             REN->vpq_checkpoint(new_bid);
          }
+         if (valpred_VTAGE_selector)
+         {
+            bool predicted_taken = IS_UNCOND_BRANCH(entry.flags) ||
+               (IS_COND_BRANCH(entry.flags) && (entry.next_pc != INCREMENT_PC(entry.pc)));
+            REN->vtage_branch_checkpoint(new_bid, predicted_taken);
+         }
       }
 
       // ---- Initialize value prediction metadata ----
@@ -236,6 +242,31 @@ void pipeline_t::rename2() {
          }
          // Stride predictor path
          else if (valpred_Stride_selector)
+         {
+            REN->vp_predict(entry.pc,
+                              entry.valpred_availability,
+                              entry.valpred_confidence,
+                              entry.valpred_destination);
+
+            if (valpred_confidence)
+            {
+                  if (entry.valpred_availability && entry.good_instruction)
+                  {
+                     db_t *real_val = get_pipe()->peek(entry.db_index);
+                     entry.valpred_confidence =
+                        (entry.valpred_destination == real_val->a_rdst[0].value);
+                  }
+                  else
+                  {
+                     entry.valpred_confidence = false;
+                  }
+            }
+
+            entry.valpred_Q_stat = true;
+            entry.valpred_index  = REN->vpq_alloc(entry.pc);
+         }
+         // VTAGE predictor path
+         else if (valpred_VTAGE_selector)
          {
             REN->vp_predict(entry.pc,
                               entry.valpred_availability,

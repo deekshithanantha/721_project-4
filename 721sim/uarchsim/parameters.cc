@@ -64,6 +64,15 @@ uint64_t stride_valpred_index = 0;
 uint64_t stride_valpred_tag = 0;
 uint64_t stride_MAX_confidencce = 0;
 
+// VTAGE Value Predictor
+bool     valpred_VTAGE_selector  = false;
+uint64_t vtage_num_tables        = 4;
+uint64_t vtage_base_idx_bits     = 10;
+uint64_t vtage_tagged_idx_bits   = 8;
+uint64_t vtage_min_hist_len      = 4;
+uint64_t vtage_tag_bits          = 10;
+uint64_t vtage_conf_max          = 7;
+
 uint32_t FU_LANE_MATRIX[(unsigned int) NUMBER_FU_TYPES] = {
    0x5A5A /*     BR: 0101 1010 */,
    0x2121 /*     LS: 0010 0001 */,

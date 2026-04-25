@@ -5,6 +5,9 @@
 #include <vector>
 #include <cassert>
 
+// Forward declaration to avoid circular include.
+class vtage;
+
 class valpred {
 private:
     /////////////////////////////////////////////////////////////////////
@@ -24,6 +27,9 @@ private:
         uint64_t pc;
         uint64_t value;
         bool value_valid;
+        // VTAGE: saved at prediction time for correct history-based training.
+        uint64_t bhr_snapshot;
+        int      vtage_provider;   // -1 = base table, 0..T-1 = tagged table
     };
 
     /////////////////////////////////////////////////////////////////////
@@ -41,6 +47,14 @@ private:
     uint64_t VPQ_tail;
     bool VPQ_head_phase;
     bool VPQ_tail_phase;
+
+    /////////////////////////////////////////////////////////////////////
+    // VTAGE predictor (competition phase)
+    /////////////////////////////////////////////////////////////////////
+    vtage *vt;
+    // Saved between vp_predict() and vpq_alloc() for the same instruction.
+    uint64_t last_bhr_snapshot;
+    int      last_vtage_provider;
 
     /////////////////////////////////////////////////////////////////////
     // Configuration variables
@@ -129,9 +143,19 @@ public:
     void vpq_restore_tail(uint64_t tail, bool tail_phase);
 
     /**
-     * Reset VPQ and SVP state (used during squash)
+     * Reset VPQ and SVP/VTAGE state (used during squash)
      */
     void reset();
+
+    /**
+     * VTAGE: checkpoint BHR for this branch then speculatively update it.
+     */
+    void vtage_branch_checkpoint(uint64_t branch_id, bool predicted_taken);
+
+    /**
+     * VTAGE: restore BHR from checkpoint on branch misprediction.
+     */
+    void vtage_bhr_restore(uint64_t branch_id);
 
     /**
      * Store checkpoint data for branch recovery

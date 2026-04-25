@@ -131,5 +131,14 @@ extern bool valpred_INTALU;
 extern bool valpred_FPALU;
 extern bool valpred_LOAD_val;
 
+// VTAGE Value Predictor 
+extern bool     valpred_VTAGE_selector;
+extern uint64_t vtage_num_tables;
+extern uint64_t vtage_base_idx_bits;
+extern uint64_t vtage_tagged_idx_bits;
+extern uint64_t vtage_min_hist_len;
+extern uint64_t vtage_tag_bits;
+extern uint64_t vtage_conf_max;
+
 
 #endif //PARAMETERS_H

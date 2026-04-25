@@ -350,7 +350,7 @@ public:
 	/////////////////////////////////////////////////////////////////////   
     uint64_t checkpoint();
 
-    // Value Prediction Rename functions (Added from teammate)
+    // Value Prediction Rename functions
     void set_checkpoint_vpq_tail(uint64_t branch_ID, uint64_t vpq_tail, bool vpq_tail_phase);
     void get_checkpoint_vpq_tail(uint64_t branch_ID, uint64_t &vpq_tail, bool &vpq_tail_phase) const;
     bool stall_vp(uint64_t bundle_valpred);
@@ -359,6 +359,10 @@ public:
     uint64_t vpq_alloc(uint64_t pc);
     void valpred_sitter(uint64_t valpred_index, uint64_t value);
     void vp_retire(uint64_t valpred_index);
+
+    // VTAGE branch handling
+    void vtage_branch_checkpoint(uint64_t branch_ID, bool predicted_taken);
+    void vtage_bhr_restore(uint64_t branch_ID);
 
     //////////////////////////////////////////
     // Functions related to Dispatch Stage. //
